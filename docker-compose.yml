@@ -4,7 +4,7 @@ services:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - "80:80"
+      - "80:80"          # 只需這一行
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
@@ -12,15 +12,7 @@ services:
       - result
     networks:
       - front-tier
-      - monitoring                  # 讓 nginx-exporter 可以連
     restart: unless-stopped
-    stop_grace_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 128M
-
   vote:
     build: 
       context: ./vote
@@ -59,13 +51,14 @@ services:
       - front-tier
       - back-tier
     restart: unless-stopped
+    ports:
+      - "5001:80"          # ← 加上這一行，讓外部可以直接訪問 result
     stop_grace_period: 30s
     deploy:
       resources:
         limits:
           cpus: '0.4'
           memory: 256M
-
   worker:
     build:
       context: ./worker
