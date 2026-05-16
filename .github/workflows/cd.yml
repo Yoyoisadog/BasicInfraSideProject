@@ -18,21 +18,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build & Push Main Services with SHA Tag
+      - name: Build & Push with SHA Tag
         run: |
-          # Build 主應用並 push latest
+          # Build 並 push latest
           docker compose build
           docker compose push
 
-          # 同時 push 帶 SHA 的 immutable 版本（方便退版）
+          # 使用小寫的 repository owner（重要修正！）
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
-          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-vote:latest ghcr.io/${{ github.repository_owner }}/voting-app-vote:${SHA}
-          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-result:latest ghcr.io/${{ github.repository_owner }}/voting-app-result:${SHA}
-          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-worker:latest ghcr.io/${{ github.repository_owner }}/voting-app-worker:${SHA}
-          docker push ghcr.io/${{ github.repository_owner }}/voting-app-vote:${SHA}
-          docker push ghcr.io/${{ github.repository_owner }}/voting-app-result:${SHA}
-          docker push ghcr.io/${{ github.repository_owner }}/voting-app-worker:${SHA}
 
+          # 同時 push 帶 SHA 的 immutable 版本
+          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-vote:latest ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
+
+          docker push ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker push ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
+          
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
