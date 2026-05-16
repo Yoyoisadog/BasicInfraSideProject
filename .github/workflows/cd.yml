@@ -23,24 +23,33 @@ jobs:
 
       - name: Build Monitoring Services
         run: docker compose -f monitoring/docker-compose.yml build --no-cache
-
-      - name: Push with SHA Tag
+        
+      - name: Build & Push with SHA Tag
         run: |
-          # Build 並 push latest
-          docker compose push
+          # 1. 先 build（不要 push）
+          docker compose build --no-cache
 
-          # 強制轉小寫（解決 GHCR repository name 問題）
+          # 2. 強制轉成小寫（解決 GHCR 問題）
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
 
-          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-vote:latest ghcr.io/${OWNER}/voting-app-vote:${SHA}
-          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
-          docker tag ghcr.io/${{ github.repository_owner }}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
+          # 3. 手動 tag + push latest（使用小寫名稱）
+          docker tag basicinfrasideproject-vote:latest ghcr.io/${OWNER}/voting-app-vote:latest
+          docker tag basicinfrasideproject-result:latest ghcr.io/${OWNER}/voting-app-result:latest
+          docker tag basicinfrasideproject-worker:latest ghcr.io/${OWNER}/voting-app-worker:latest
+
+          docker push ghcr.io/${OWNER}/voting-app-vote:latest
+          docker push ghcr.io/${OWNER}/voting-app-result:latest
+          docker push ghcr.io/${OWNER}/voting-app-worker:latest
+
+          # 4. 同時 tag + push SHA 版本（可退版用）
+          docker tag ghcr.io/${OWNER}/voting-app-vote:latest ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
 
           docker push ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker push ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
-
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
