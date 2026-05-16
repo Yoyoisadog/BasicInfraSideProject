@@ -1,10 +1,11 @@
 global:
-  scrape_interval: 30s
-  evaluation_interval: 30s
+  scrape_interval: 120s
+  evaluation_interval: 120s
 
 scrape_configs:
   # Host 層 - node-exporter
   - job_name: 'node'
+    scrape_interval: 60s
     static_configs:
       - targets: ['node-exporter:9100']
         labels:
@@ -13,6 +14,7 @@ scrape_configs:
 
   # Container 層 - cAdvisor
   - job_name: 'cadvisor'
+    scrape_interval: 60s
     static_configs:
       - targets: ['cadvisor:8080']
         labels:
@@ -21,6 +23,7 @@ scrape_configs:
 
   # Service 層 - Nginx
   - job_name: 'nginx'
+    scrape_interval: 60s
     static_configs:
       - targets: ['nginx-exporter:9113']
         labels:

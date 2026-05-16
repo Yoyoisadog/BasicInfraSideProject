@@ -41,20 +41,18 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 160M
+          cpus: '0.15'
+          memory: 128M
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:1.5
     container_name: nginx-exporter
     restart: unless-stopped
-    stop_grace_period: 15s
+    stop_grace_period: 60s
     command:
       - -nginx.scrape-uri=http://nginx:8080/stub_status
     ports:
       - "9113:9113"
-    depends_on:
-      - nginx
     networks:
       - monitoring
     deploy:
@@ -69,7 +67,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /home/ubuntu/docker-voting-app/example-voting-app/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
@@ -92,7 +90,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     volumes:
-      - grafana_data:/var/lib/grafana
+      - example-voting-app_grafana_data:/var/lib/grafana
     ports:
       - "3000:3000"
     networks:
@@ -100,8 +98,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 224M
+          cpus: '0.15'
+          memory: 400M
 
 networks:
   monitoring:
@@ -109,3 +107,5 @@ networks:
 volumes:
   prometheus_data:
   grafana_data:
+  example-voting-app_grafana_data:
+    external: true
