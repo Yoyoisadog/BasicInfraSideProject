@@ -23,17 +23,14 @@ jobs:
 
       - name: Build Monitoring Services
         run: docker compose -f monitoring/docker-compose.yml build --no-cache
-        
-      - name: Build & Push with SHA Tag
-        run: |
-          # 1. 先 build（不要 push）
-          docker compose build --no-cache
 
-          # 2. 強制轉成小寫（解決 GHCR 問題）
+      - name: Push with SHA Tag
+        run: |
+          # 強制轉小寫（解決你的 GHCR 大寫問題）
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
 
-          # 3. 手動 tag + push latest（使用小寫名稱）
+          # Push latest
           docker tag basicinfrasideproject-vote:latest ghcr.io/${OWNER}/voting-app-vote:latest
           docker tag basicinfrasideproject-result:latest ghcr.io/${OWNER}/voting-app-result:latest
           docker tag basicinfrasideproject-worker:latest ghcr.io/${OWNER}/voting-app-worker:latest
@@ -42,7 +39,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-result:latest
           docker push ghcr.io/${OWNER}/voting-app-worker:latest
 
-          # 4. 同時 tag + push SHA 版本（可退版用）
+          # Push SHA 版本（用來退版）
           docker tag ghcr.io/${OWNER}/voting-app-vote:latest ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
@@ -50,6 +47,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker push ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
+
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -65,15 +63,15 @@ jobs:
           script: |
             cd ~/docker-voting-app/example-voting-app
             git pull origin main
-            
+
             echo "=== Deploying Main Application ==="
             docker compose pull
             docker compose up -d --force-recreate
-            
+
             echo "=== Deploying Monitoring Stack ==="
             docker compose -f monitoring/docker-compose.yml pull
             docker compose -f monitoring/docker-compose.yml up -d
-            
+
             echo "✅ 全專案部署完成 at $(date) with SHA ${{ github.sha }}"
             echo "=== Main Application Status ==="
             docker compose ps
