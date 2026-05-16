@@ -18,17 +18,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build & Push with SHA Tag
+      - name: Build Main Services
+        run: docker compose build --no-cache
+
+      - name: Build Monitoring Services
+        run: docker compose -f monitoring/docker-compose.yml build --no-cache
+
+      - name: Push with SHA Tag
         run: |
           # Build 並 push latest
-          docker compose build
           docker compose push
 
-          # 使用小寫的 repository owner（重要修正！）
+          # 強制轉小寫（解決 GHCR repository name 問題）
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
 
-          # 同時 push 帶 SHA 的 immutable 版本
           docker tag ghcr.io/${{ github.repository_owner }}/voting-app-vote:latest ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker tag ghcr.io/${{ github.repository_owner }}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker tag ghcr.io/${{ github.repository_owner }}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
@@ -36,7 +40,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker push ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
-          
+
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
