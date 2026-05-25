@@ -26,25 +26,22 @@ jobs:
       - name: Build Monitoring Services
         run: docker compose -f monitoring/docker-compose.yml build --no-cache
 
-      # === Push to GHCR ===
-      - name: Push with SHA Tag
+      - name: Push to GHCR
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
 
-          echo "=== Debug: 目前 build 出來的 image ==="
+          echo "=== Debug: build 完的 image ==="
           docker images | grep -E 'vote|result|worker'
 
-          echo "=== 開始 Push 主應用 ==="
-          docker tag example-voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:latest
-          docker tag example-voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:latest
-          docker tag example-voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:latest
+          echo "=== 開始 Push 到 GHCR ==="
 
+          # 直接 push build 出來的那個 image（因為 compose.yml 已經指定好路徑）
           docker push ghcr.io/${OWNER}/voting-app-vote:latest
           docker push ghcr.io/${OWNER}/voting-app-result:latest
           docker push ghcr.io/${OWNER}/voting-app-worker:latest
 
-          # Push SHA 版本（退版用）
+          # 同時 push SHA 版本（用來退版）
           docker tag ghcr.io/${OWNER}/voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
