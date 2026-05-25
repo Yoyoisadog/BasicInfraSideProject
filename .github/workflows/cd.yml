@@ -18,35 +18,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      # === Build & Push Vote ===
-      - name: Build and Push Vote Service
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/yoyoisadog/voting-app-vote:latest
-            ghcr.io/yoyoisadog/voting-app-vote:${{ github.sha }}
+      # === Build 主應用 ===
+      - name: Build Main Services
+        run: docker compose build --no-cache
 
-      # === Build & Push Result ===
-      - name: Build and Push Result Service
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/yoyoisadog/voting-app-result:latest
-            ghcr.io/yoyoisadog/voting-app-result:${{ github.sha }}
+      # === Build Monitoring ===
+      - name: Build Monitoring Services
+        run: docker compose -f monitoring/docker-compose.yml build --no-cache
 
-      # === Build & Push Worker ===
-      - name: Build and Push Worker Service
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/yoyoisadog/voting-app-worker:latest
-            ghcr.io/yoyoisadog/voting-app-worker:${{ github.sha }}
+      # === Push to GHCR ===
+      - name: Push with SHA Tag
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHA=${{ github.sha }}
+
+          echo "=== Debug: 目前 build 出來的 image ==="
+          docker images | grep -E 'vote|result|worker'
+
+          echo "=== 開始 Push 主應用 ==="
+          docker tag example-voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:latest
+          docker tag example-voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:latest
+          docker tag example-voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:latest
+
+          docker push ghcr.io/${OWNER}/voting-app-vote:latest
+          docker push ghcr.io/${OWNER}/voting-app-result:latest
+          docker push ghcr.io/${OWNER}/voting-app-worker:latest
+
+          # Push SHA 版本（退版用）
+          docker tag ghcr.io/${OWNER}/voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
+
+          docker push ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker push ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
+
+          echo "✅ 所有 image 已成功 push 到 GHCR"
   # ==================== 部署到 EC2 ====================
   deploy-to-ec2:
     needs: build-and-push
