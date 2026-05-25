@@ -1,4 +1,4 @@
-name: CD - Deploy to EC2 (Docker Compose + Nginx + Monitoring)
+name: CD - Deploy to EC2
 
 on:
   push:
@@ -18,14 +18,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      # === Build 主應用 ===
+      # Build 主應用
       - name: Build Main Services
         run: docker compose build --no-cache
 
-      # === Build Monitoring ===
+      # Build Monitoring
       - name: Build Monitoring Services
         run: docker compose -f monitoring/docker-compose.yml build --no-cache
 
+      # Push to GHCR
       - name: Push to GHCR
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
@@ -36,12 +37,10 @@ jobs:
 
           echo "=== 開始 Push 到 GHCR ==="
 
-          # 直接 push build 出來的那個 image（因為 compose.yml 已經指定好路徑）
           docker push ghcr.io/${OWNER}/voting-app-vote:latest
           docker push ghcr.io/${OWNER}/voting-app-result:latest
           docker push ghcr.io/${OWNER}/voting-app-worker:latest
 
-          # 同時 push SHA 版本（用來退版）
           docker tag ghcr.io/${OWNER}/voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
@@ -51,7 +50,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
 
           echo "✅ 所有 image 已成功 push 到 GHCR"
-  # ==================== 部署到 EC2 ====================
+
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
