@@ -29,21 +29,21 @@ jobs:
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
 
-          echo "=== Debug: 看一下 build 完後實際有哪些 image ==="
-          docker images | grep -E 'vote|result|worker|basicinfra'
+          echo "=== Debug: 完整列出所有 image（這一步最重要）==="
+          docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E 'vote|result|worker|basicinfra|ghcr'
 
           echo "=== 開始 Push 主應用服務 ==="
 
-          # === 這裡改成 GitHub Actions 實際產生的 image 名稱 ===
-          docker tag example-voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:latest
-          docker tag example-voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:latest
-          docker tag example-voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:latest
+          # === 請根據上面 Debug 輸出的 image 名稱來調整下面三行 ===
+          docker tag voting-app-vote:latest          ghcr.io/${OWNER}/voting-app-vote:latest
+          docker tag voting-app-result:latest        ghcr.io/${OWNER}/voting-app-result:latest
+          docker tag voting-app-worker:latest        ghcr.io/${OWNER}/voting-app-worker:latest
 
           docker push ghcr.io/${OWNER}/voting-app-vote:latest
           docker push ghcr.io/${OWNER}/voting-app-result:latest
           docker push ghcr.io/${OWNER}/voting-app-worker:latest
 
-          # Push SHA 版本
+          # Push SHA 版本（退版用）
           docker tag ghcr.io/${OWNER}/voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
@@ -53,7 +53,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
 
           echo "✅ 所有 image 已成功 push 到 GHCR"
-          
+
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
