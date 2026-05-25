@@ -26,13 +26,15 @@ jobs:
 
       - name: Push with SHA Tag
         run: |
-          # 強制轉小寫（GHCR 不接受大寫）
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA=${{ github.sha }}
 
+          echo "=== Debug: 看一下 build 完後實際有哪些 image ==="
+          docker images | grep -E 'vote|result|worker|basicinfra'
+
           echo "=== 開始 Push 主應用服務 ==="
 
-          # === 正確的 image 名稱（根據你的 docker images 輸出）===
+          # === 這裡改成 GitHub Actions 實際產生的 image 名稱 ===
           docker tag example-voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:latest
           docker tag example-voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:latest
           docker tag example-voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:latest
@@ -41,7 +43,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-result:latest
           docker push ghcr.io/${OWNER}/voting-app-worker:latest
 
-          # === 同時 Push SHA 版本（用來退版）===
+          # Push SHA 版本
           docker tag ghcr.io/${OWNER}/voting-app-vote:latest   ghcr.io/${OWNER}/voting-app-vote:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
           docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
@@ -51,7 +53,7 @@ jobs:
           docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
 
           echo "✅ 所有 image 已成功 push 到 GHCR"
-
+          
   deploy-to-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
