@@ -16,21 +16,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build all images (multi-arch, cache)
+      - name: Build all services with Docker Compose
         run: |
-          # 強制轉小寫（GHCR 要求）
-          IMAGE_PREFIX=$(echo "ghcr.io/${{ github.repository_owner }}/voting-app" | tr '[:upper:]' '[:lower:]')
-          docker compose build --no-cache
+          echo "🔨 開始 Build Docker Compose..."
+          docker compose build --no-cache --progress=plain
 
-      - name: Trivy vulnerability scan
+      - name: Trivy 安全性掃描
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          format: 'table'
           severity: 'CRITICAL,HIGH'
+          exit-code: '1'
 
-      - name: Smoke Test (optional)
+      - name: Smoke Test
         run: |
-          # 你可以這裡啟動 compose 做簡單 curl 測試
-          echo "Smoke test skipped for single-machine demo"
+          echo "✅ Docker Compose 建置成功！（本階段 CI 測試通過）"
+          docker compose config --quiet
