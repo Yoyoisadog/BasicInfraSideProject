@@ -16,7 +16,7 @@ services:
   vote:
     build: 
       context: ./vote
-      target: dev
+      
     image: ghcr.io/yoyoisadog/voting-app-vote:${IMAGE_TAG:-latest}
     depends_on:
       redis:
