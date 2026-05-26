@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================
-# 實務 CI/CD 測試腳本 - 簡易版（不依賴 gh）
+# 實務 CI/CD 測試腳本 - 簡易版（不使用 gh）
 # =============================================
 
 set -e
@@ -31,11 +31,13 @@ fi
 git push origin "$BRANCH_NAME"
 
 echo "🎉 Push 完成！"
-echo "👉 請前往以下網址手動建立 PR："
+echo ""
+echo "👉 請前往以下網址手動建立 Pull Request："
 echo "   https://github.com/Yoyoisadog/BasicInfraSideProject/compare/main...$BRANCH_NAME"
 echo ""
 echo "👉 或直接前往 Actions 查看："
 echo "   https://github.com/Yoyoisadog/BasicInfraSideProject/actions"
+NEWSCRIPT
 
 chmod +x ./ci.sh
-echo "✅ ci.sh 已更新為簡易版！"
+echo "✅ ci.sh 已成功更新！"
