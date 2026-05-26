@@ -26,26 +26,24 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}     # ← 改用 PAT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build & Push vote service
+      - name: Build & Push vote
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./vote/Dockerfile          # ← 根據你的實際路徑調整
+          context: ./vote
           push: true
           tags: |
             ghcr.io/${{ steps.lowercase.outputs.owner }}/voting-app-vote:latest
             ghcr.io/${{ steps.lowercase.outputs.owner }}/voting-app-vote:${{ github.sha }}
 
-      - name: Build & Push result service
+      - name: Build & Push result
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./result/Dockerfile        # ← 根據你的實際路徑調整
+          context: ./result
           push: true
           tags: |
             ghcr.io/${{ steps.lowercase.outputs.owner }}/voting-app-result:latest
