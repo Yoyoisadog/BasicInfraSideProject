@@ -19,7 +19,7 @@ echo "# Test CD Trigger - $(date)" >> README.md
 
 # 4. 提交並 push
 echo "→ 提交並 push 到 main（這會觸發 CD）..."
-git add README.md
+git add .
 git commit -m "test: force trigger CD workflow"
 
 if [ $? -eq 0 ]; then
