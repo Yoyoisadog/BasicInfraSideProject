@@ -62,16 +62,3 @@ jobs:
             docker compose pull
             docker compose up -d --force-recreate
             echo "✅ Deployment completed with SHA: ${{ github.sha }}"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: success()
-        with:
-          tag_name: v${{ github.run_number }}-${{ github.sha }}
-          name: "Release v${{ github.run_number }} (SHA: ${{ github.sha }})"
-          body: |
-            ## 🚀 Auto-deployed by GitHub Actions
-            - **Image Tag**: `${{ github.sha }}`
-            - **Deploy Time**: ${{ github.event.head_commit.timestamp }}
-          draft: false
-          prerelease: false
