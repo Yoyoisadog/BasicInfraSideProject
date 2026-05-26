@@ -1,4 +1,5 @@
 #!/bin/bash
+#git checkout -b feature/你的功能名稱
 
 echo "============================================"
 echo "          CD 快速測試腳本"

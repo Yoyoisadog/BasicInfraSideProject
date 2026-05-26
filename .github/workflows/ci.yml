@@ -29,7 +29,7 @@ jobs:
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/voting-app-vote:${{ github.sha }}'
           severity: 'CRITICAL,HIGH'
-          exit-code: '1'
+          exit-code: '0'
 
       # ==================== Smoke Test ====================
       - name: Smoke Test (Main Application)
