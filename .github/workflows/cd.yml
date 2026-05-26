@@ -16,4 +16,3 @@ jobs:
           echo "Commit SHA: ${{ github.sha }}"
           echo "============================================"
           echo "如果看到這行，表示 CD workflow 已經正常運作"
-          
