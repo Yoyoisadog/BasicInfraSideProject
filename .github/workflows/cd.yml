@@ -31,21 +31,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build & Push vote service
+      - name: Build & Push vote
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./vote/Dockerfile          # ← 根據你的實際路徑調整
+          context: ./vote
           push: true
           tags: |
             ghcr.io/${{ steps.lowercase.outputs.owner }}/voting-app-vote:latest
             ghcr.io/${{ steps.lowercase.outputs.owner }}/voting-app-vote:${{ github.sha }}
 
-      - name: Build & Push result service
+      - name: Build & Push result
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./result/Dockerfile        # ← 根據你的實際路徑調整
+          context: ./result
           push: true
           tags: |
             ghcr.io/${{ steps.lowercase.outputs.owner }}/voting-app-result:latest
@@ -64,16 +62,3 @@ jobs:
             docker compose pull
             docker compose up -d --force-recreate
             echo "✅ Deployment completed with SHA: ${{ github.sha }}"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: success()
-        with:
-          tag_name: v${{ github.run_number }}-${{ github.sha }}
-          name: "Release v${{ github.run_number }} (SHA: ${{ github.sha }})"
-          body: |
-            ## 🚀 Auto-deployed by GitHub Actions
-            - **Image Tag**: `${{ github.sha }}`
-            - **Deploy Time**: ${{ github.event.head_commit.timestamp }}
-          draft: false
-          prerelease: false
