@@ -7,6 +7,10 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write     # 重要：允許寫入 Package
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,8 +22,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      # === Build & Push Vote ===
-      - name: Build and Push Vote Service
+      # Build & Push Vote
+      - name: Build and Push Vote
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -28,8 +32,8 @@ jobs:
             ghcr.io/yoyoisadog/voting-app-vote:latest
             ghcr.io/yoyoisadog/voting-app-vote:${{ github.sha }}
 
-      # === Build & Push Result ===
-      - name: Build and Push Result Service
+      # Build & Push Result
+      - name: Build and Push Result
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -38,8 +42,8 @@ jobs:
             ghcr.io/yoyoisadog/voting-app-result:latest
             ghcr.io/yoyoisadog/voting-app-result:${{ github.sha }}
 
-      # === Build & Push Worker ===
-      - name: Build and Push Worker Service
+      # Build & Push Worker
+      - name: Build and Push Worker
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -73,20 +77,4 @@ jobs:
             docker compose -f monitoring/docker-compose.yml pull
             docker compose -f monitoring/docker-compose.yml up -d
 
-            echo "✅ 全專案部署完成 at $(date) with SHA ${{ github.sha }}"
-
-      # ==================== 自動建立 GitHub Release ====================
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.sha }}
-          name: "Deployment ${{ github.sha }}"
-          body: |
-            **自動部署成功**
-            - SHA: ${{ github.sha }}
-            - 部署時間: $(date)
-            - 觸發者: ${{ github.actor }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            echo "✅ 部署完成 at $(date) with SHA ${{ github.sha }}"
