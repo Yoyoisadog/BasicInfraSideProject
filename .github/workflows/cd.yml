@@ -5,76 +5,13 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write     # 重要：允許寫入 Package
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-      # Build & Push Vote
-      - name: Build and Push Vote
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/yoyoisadog/voting-app-vote:latest
-            ghcr.io/yoyoisadog/voting-app-vote:${{ github.sha }}
-
-      # Build & Push Result
-      - name: Build and Push Result
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/yoyoisadog/voting-app-result:latest
-            ghcr.io/yoyoisadog/voting-app-result:${{ github.sha }}
-
-      # Build & Push Worker
-      - name: Build and Push Worker
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/yoyoisadog/voting-app-worker:latest
-            ghcr.io/yoyoisadog/voting-app-worker:${{ github.sha }}
-
-  # ==================== 部署到 EC2 ====================
-  deploy-to-ec2:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-      - name: SSH Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/docker-voting-app/example-voting-app
-            git pull origin main
-
-            echo "=== Deploying Main Application ==="
-            docker compose pull
-            docker compose up -d --force-recreate
-
-            echo "=== Deploying Monitoring Stack ==="
-            docker compose -f monitoring/docker-compose.yml pull
-            docker compose -f monitoring/docker-compose.yml up -d
-
-            echo "✅ 部署完成 at $(date) with SHA ${{ github.sha }}"
+      - name: Test CD Trigger
+        run: |
+          echo "============================================"
+          echo "✅ CD workflow 成功被 GitHub 載入並執行！"
+          echo "時間: $(date)"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "============================================"
