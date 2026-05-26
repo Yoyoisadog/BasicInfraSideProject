@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,25 +20,18 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}   # 推薦直接用 GITHUB_TOKEN
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set lower-case image prefix
-        id: image_prefix
-        run: |
-          echo "prefix=$(echo 'ghcr.io/${{ github.repository_owner }}/voting-app' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-      - name: Build & Push all services (latest + SHA)
+      - name: Build & Push 多服務（latest + SHA）
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile   # 如果你有多個 Dockerfile，可用 matrix
           push: true
           tags: |
-            ${{ steps.image_prefix.outputs.prefix }}-vote:latest
-            ${{ steps.image_prefix.outputs.prefix }}-vote:${{ github.sha }}
-            ${{ steps.image_prefix.outputs.prefix }}-result:latest
-            ${{ steps.image_prefix.outputs.prefix }}-result:${{ github.sha }}
-            # 其他 service 同理...
+            ghcr.io/${{ github.repository_owner }}/voting-app-vote:latest
+            ghcr.io/${{ github.repository_owner }}/voting-app-vote:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/voting-app-result:latest
+            ghcr.io/${{ github.repository_owner }}/voting-app-result:${{ github.sha }}
           build-args: |
             IMAGE_TAG=${{ github.sha }}
 
@@ -48,15 +41,13 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_SSH_PORT }}
           script: |
-            cd /path/to/your/project   # 改成你專案在 EC2 的實際路徑
+            cd ~/docker-voting-app/example-voting-app
             git pull origin main
-            # 更新 .env 中的 IMAGE_TAG（如果有）
             sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env || echo "IMAGE_TAG=${{ github.sha }}" >> .env
             docker compose pull
             docker compose up -d --force-recreate
-            echo "✅ Deployment completed with SHA: ${{ github.sha }}"
+            echo "✅ Deployment with SHA: ${{ github.sha }} completed"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -64,11 +55,3 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}-${{ github.sha }}
           name: Release v${{ github.run_number }} (SHA: ${{ github.sha }})
-          body: |
-            ## 🚀 Auto-deployed by GitHub Actions
-            - **Image Tag**: `${{ github.sha }}`
-            - **Deploy Time**: ${{ github.event.head_commit.timestamp }}
-            - **Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-            - **Docker Images**: Check [Packages](https://github.com/${{ github.repository }}/pkgs/container/voting-app)
-          draft: false
-          prerelease: false
