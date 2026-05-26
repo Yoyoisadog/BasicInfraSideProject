@@ -20,6 +20,7 @@ jobs:
 
       - name: Build and Push Services
         run: |
+          echo "=== Building services ==="
           docker compose build --no-cache
           docker compose -f monitoring/docker-compose.yml build --no-cache
 
