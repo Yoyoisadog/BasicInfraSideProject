@@ -1,40 +1,44 @@
 #!/bin/bash
 # =============================================
-# 實務 CI/CD 測試觸發腳本（專為你的 Voting App 設計）
-# 每次執行都會強制產生一個 commit 來觸發 workflow
+# 實務 CI/CD 測試腳本 - 分支 + 自動開 PR 版本
 # =============================================
 
-set -e  # 任何錯誤立即停止
+set -e
 
-echo "🚀 開始執行 CI/CD 測試流程..."
-
-# 1. 進入專案目錄
+echo "🚀 開始執行 CI/CD 測試流程（分支 + PR 模式）..."
 cd "$(dirname "$0")" || exit 1
 
-# 2. Stage 所有變更
+BRANCH_NAME="test/ci-cd-$(date '+%Y%m%d-%H%M%S')"
+
+# 1. 確保在 main 並更新
+git checkout main
+git pull origin main
+
+# 2. 切新分支
+git checkout -b "$BRANCH_NAME"
+
+# 3. Stage 所有變更
 git add .
 
-# 3. 檢查是否有變更
+# 4. Commit
 if git diff --cached --quiet; then
-    echo "ℹ️  沒有新變更，使用 --allow-empty 強制觸發 commit（測試用）"
-    COMMIT_FLAG="--allow-empty"
+    echo "ℹ️  沒有變更，使用 --allow-empty"
+    git commit --allow-empty -m "test: trigger CI/CD pipeline - $(date '+%Y-%m-%d %H:%M:%S')"
 else
-    echo "✅ 有新變更，正常 commit"
-    COMMIT_FLAG=""
+    git commit -m "test: trigger CI/CD pipeline - $(date '+%Y-%m-%d %H:%M:%S')"
 fi
 
-# 4. Commit（永遠能成功）
-git commit $COMMIT_FLAG -m "test: trigger full CI/CD pipeline - $(date '+%Y-%m-%d %H:%M:%S')"
+# 5. Push 到新分支
+git push origin "$BRANCH_NAME"
 
-# 5. Push 到 main（觸發 CI + CD）
-git push origin main
+# 6. 自動建立 Pull Request
+echo "🔗 正在建立 Pull Request..."
+gh pr create --title "test: trigger CI/CD pipeline - $(date '+%Y-%m-%d %H:%M:%S')" \
+             --body "Automated test PR for CI/CD validation." \
+             --base main \
+             --head "$BRANCH_NAME"
 
-echo "🎉 Push 完成！"
-echo "👉 請立即前往 GitHub Actions 查看："
-echo "   https://github.com/Yoyoisadog/BasicInfraSideProject/actions"
-echo ""
-echo "✅ 等待 CI/CD 執行完畢後，可直接執行退版測試。"
-
-# 給執行權限
-chmod +x ./ci.sh
-echo "✅ ci.sh 已更新為穩健版本！"
+echo "🎉 Push 完成並已建立 PR！"
+echo "👉 請前往以下網址查看："
+echo "https://github.com/Yoyoisadog/BasicInfraSideProject/pulls"
+echo "https://github.com/Yoyoisadog/BasicInfraSideProject/actions"
