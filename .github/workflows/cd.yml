@@ -5,16 +5,51 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Test CD Trigger
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and Push Services
         run: |
-          echo "============================================"
-          echo "✅ CD workflow 成功被 GitHub 載入並執行！"
-          echo "時間: $(date)"
-          echo "Commit SHA: ${{ github.sha }}"
-          echo "============================================"
-          echo "如果看到這行，表示 CD workflow 已經正常運作"
-# Force update
-# Force update at Tue May 26 11:50:20 UTC 2026
+          docker compose build --no-cache
+          docker compose -f monitoring/docker-compose.yml build --no-cache
+
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHA=${{ github.sha }}
+
+          echo "=== Pushing to GHCR ==="
+          docker push ghcr.io/${OWNER}/voting-app-vote:latest
+          docker push ghcr.io/${OWNER}/voting-app-result:latest
+          docker push ghcr.io/${OWNER}/voting-app-worker:latest
+
+          docker tag ghcr.io/${OWNER}/voting-app-vote:latest ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker tag ghcr.io/${OWNER}/voting-app-result:latest ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker tag ghcr.io/${OWNER}/voting-app-worker:latest ghcr.io/${OWNER}/voting-app-worker:${SHA}
+
+          docker push ghcr.io/${OWNER}/voting-app-vote:${SHA}
+          docker push ghcr.io/${OWNER}/voting-app-result:${SHA}
+          docker push ghcr.io/${OWNER}/voting-app-worker:${SHA}
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/docker-voting-app/example-voting-app
+            git pull origin main
+            docker compose pull
+            docker compose up -d --force-recreate
+            docker compose -f monitoring/docker-compose.yml pull
+            docker compose -f monitoring/docker-compose.yml up -d
+            echo "✅ 部署完成 at $(date)"
